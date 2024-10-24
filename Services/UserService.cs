@@ -36,12 +36,12 @@ public class UserService
         var response = await _httpClient.ExecuteAsync(request);
 
         var tokenDto = JsonConvert.DeserializeObject<Response<TokenDto>>(response.Content);
-        //return tokenDto.Data.AccessToken
             
         return new UserRegistrationResult
         {
             RegistredUser = newUser,
             AccessToken = tokenDto.Data.AccessToken,
+            RefreshToken = tokenDto.Data.RefreshToken,
         };
     }
 }
@@ -50,4 +50,5 @@ public class UserRegistrationResult
 {
     public User RegistredUser { get; set; }
     public string AccessToken { get; set; }
+    public string RefreshToken { get; set; }
 }

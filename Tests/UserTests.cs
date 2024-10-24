@@ -1,9 +1,9 @@
 using System.Net;
 using Newtonsoft.Json;
-using ProjectX.Model;
+using ProjectX.Models;
 using ProjectX.Services;
 
-namespace ProjectX;
+namespace ProjectX.Tests;
 
 public class UserTests
 {
@@ -17,16 +17,10 @@ public class UserTests
     }
 
     [Fact]
-    public async Task Should_RegisterUser_And_ReturnAccessToken()
+    public async Task VerifyUserProfileIsSuccess()
     {
-        //Register new user
-        UserRegistrationResult userRegistrationResult = await _userService.RegisterUser(); 
+        UserRegistrationResult userRegistrationResult = await _userService.RegisterUser();
 
-        await VerifyUserProfileIsCorrect(userRegistrationResult);
-    }
-
-    private async Task VerifyUserProfileIsCorrect(UserRegistrationResult userRegistrationResult) // or IsSuccess
-    {
         var request = new RestRequest("/api/user/profile", Method.Get);
         request.AddHeader("Authorization", $"Bearer {userRegistrationResult.AccessToken}");
 
@@ -47,7 +41,8 @@ public class UserTests
     [Fact]
     public async Task Should_ReturnUnauthorized_When_AccessTokenIsInvalid() //401
     {
-        var invalidAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJ2aWxsLnNoYXJwQHRlc3QuY29tIiwibmJmIjoxNzI5NTMyMTM5LCJleHAiOjE3Mjk1NTAxMzksImlhdCI6MTcyOTUzMjEzOSwiaXNzIjoiWWVydGFwIiwiYXVkIjoieWVydGFwLWN1c3RvbWVycyJ9.gW0Zz2NGkrYg5jlqrSMLM_kQNWwQZKWsTXp";
+        var invalidAccessToken =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJ2aWxsLnNoYXJwQHRlc3QuY29tIiwibmJmIjoxNzI5NTMyMTM5LCJleHAiOjE3Mjk1NTAxMzksImlhdCI6MTcyOTUzMjEzOSwiaXNzIjoiWWVydGFwIiwiYXVkIjoieWVydGFwLWN1c3RvbWVycyJ9.gW0Zz2NGkrYg5jlqrSMLM_kQNWwQZKWsTXp";
 
         var request = new RestRequest("/api/user/profile", Method.Get);
         request.AddHeader("Authorization", $"Bearer {invalidAccessToken}");
@@ -60,21 +55,20 @@ public class UserTests
     public async Task Should_ReturnUnauthorized_When_AccessTokenIsMissing() //401
     {
         var request = new RestRequest("/api/user/profile", Method.Get);
-        
+
         var response = await _httpClient.ExecuteAsync(request);
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-    
+
     [Fact]
     public async Task Should_UpdateUserProfileSuccessfully()
     {
-        //Register new user
-        UserRegistrationResult accessToken = await _userService.RegisterUser(); //Bogus
+        UserRegistrationResult userRegistrationResult = await _userService.RegisterUser();
 
         var updateRequest = new RestRequest("/api/user/profile", Method.Put);
-        updateRequest.AddHeader("Authorization", $"Bearer {accessToken}");
+        updateRequest.AddHeader("Authorization", $"Bearer {userRegistrationResult.AccessToken}");
         updateRequest.AddJsonBody(new { DisplayName = "Updated Gomi Sharp" });
-        
+
         var updateResponse = await _httpClient.ExecuteAsync(updateRequest);
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
 

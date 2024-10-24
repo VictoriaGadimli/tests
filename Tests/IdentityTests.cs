@@ -1,11 +1,10 @@
 using System.Net;
 using Bogus;
-using Bogus.DataSets;
 using Newtonsoft.Json;
 using ProjectX.Models;
 using ProjectX.Services;
 
-namespace ProjectX;
+namespace ProjectX.Tests;
 
 public class IdentityTests
 {
@@ -29,9 +28,9 @@ public class IdentityTests
             .RuleFor(u => u.Gender, f => f.PickRandom(new[] { "Male", "Female" }))
             .RuleFor(u => u.PreferredCategoryKeys, f => new[] { f.Random.Word(), f.Random.Word() })
             .RuleFor(u => u.CountryKey, f => f.Address.Country());
-        
+
         var newUser = userFaker.Generate();
-        
+
         var request = new RestRequest("/api/user/identity/register", Method.Post);
         request.AddJsonBody(newUser);
 
@@ -106,14 +105,15 @@ public class IdentityTests
     [Fact]
     public async Task Should_ReturnNewAccessToken_When_RefreshTokenIsUsed()
     {
-        var refreshTokenRequest = new
+        UserRegistrationResult userRegistrationResult = await _userService.RegisterUser(); 
+        
+        var refreshToken = new
         {
-            RefreshToken =
-                "CfDJ8NESHzjbvWpEntyEnBIJLWgMs1OzfCiycl6kKjiIQqSXdr_RHNo3UqL7ny8IimTpakQ6uAcLNcBb1DQKJOIdwc5WDtla2mvVtUWVd2jn-XaTYe_wlNd_weyam1uArSv2qw_9u_8GYpw97BuTPn0w1nHyr0FynVAJElZeeUj6n0NTVDta9JM0P2BejpAMqAyvdu1OjOWkHKXC1CfJ1mhezFYUX8MJ3pIuSxIh0_0TxWVYR-Tfif3gc3uA2yC0bLb1VSmi3gWgWSNHzvw63Ee3FCKAxlUSMZTHclyR1ohrt8pbVs4HVkCQasE5Zv0MGtgeyPBKI7dntHavE2QHQUZYDow"
+            RefreshToken = userRegistrationResult.RefreshToken,
         };
-
+        
         var request = new RestRequest("/api/identity/token/refresh", Method.Post);
-        request.AddJsonBody(refreshTokenRequest);
+        request.AddJsonBody(refreshToken);
 
         var response = await _httpClient.ExecuteAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -142,22 +142,18 @@ public class IdentityTests
     [Fact]
     public async Task GetUserByValidEmail_ShouldReturnOk()
     {
-        //Register new user
+        UserRegistrationResult userRegistrationResult = await _userService.RegisterUser();
 
-        string testEmail = "gomi.boss@test.com";
-
-        _ = await _userService.RegisterUser(); //Bogus
-
-        var request = new RestRequest($"/api/user/identity/login-email?email={testEmail}", Method.Get);
+        var request = new RestRequest($"/api/user/identity/login-email?email={userRegistrationResult.RegistredUser.Email}", Method.Get);
         var response = await _httpClient.ExecuteAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public async Task GetUserByInvalidId_ShouldReturnNotFound()
+    public async Task GetUserByInvalidEmail_ShouldReturnNotFound() 
     {
         string email = "test@test.com";
-        var client = new RestClient("https://api.greenwater-c062bd3e.westeurope.azurecontainerapps.io");
+        var client = new RestClient("https://api.green.westeurope.azurecontainerapps.io"); 
         var request = new RestRequest($"/api/user/identity/login-email?email={email}", Method.Get);
 
         var response = await client.ExecuteAsync(request);

@@ -1,4 +1,4 @@
-namespace ProjectX.Model;
+namespace ProjectX.Models;
 
 public class TokenDto
 {
